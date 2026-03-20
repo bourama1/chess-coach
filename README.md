@@ -46,12 +46,13 @@ src/
 ```
 
 ## Features
-- **Full Move Validation**: Powered by `chess.js`.
-- **Real-time Eval Bar**: Visualizes centipawn advantage and mate detection.
-- **Stockfish Engine**: Depth-16 analysis performed locally in your browser.
-- **AI Coach Insights**: Human-like explanations of the best moves and strategic themes using Groq's high-speed inference.
-- **Undo & Reset**: Easily backtrack or start fresh.
-- **Flip Board**: Toggle between White and Black perspectives.
+- **Full Move Validation**: Powered by `chess.js` (v1.3+).
+- **Real-time Eval Bar**: Visualizes centipawn advantage and mate detection with normalized scoring.
+- **Stockfish Engine**: Depth-16 analysis performed locally in your browser via WebAssembly.
+- **Grandmaster AI Coaching**: Sophisticated, tactical explanations of every move (from 'Brilliant' to 'Blunder') using Groq's high-speed Llama 3.3 inference.
+- **Responsive Professional UI**: Elegant, dark-themed interface with flexible layouts for desktop and mobile.
+- **Undo & Reset**: Easily backtrack or start fresh with keyboard-friendly controls.
+- **Flip Board**: Toggle between White and Black perspectives instantly.
 - **PGN Export**: Download your game history for further study.
 
 ## Security Note

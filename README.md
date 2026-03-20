@@ -1,6 +1,7 @@
 # Chess Coach ♟️
 
 A React chess application featuring real-time Stockfish engine analysis and AI-powered move explanations via **Groq**.
+<img width="1224" height="821" alt="image" src="https://github.com/user-attachments/assets/d7ea807d-5a0c-401c-9d1c-2c6bc32ccafd" />
 
 ## Tech Stack
 - **React 18** + Vite

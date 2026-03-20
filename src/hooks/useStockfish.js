@@ -45,7 +45,10 @@ export function useStockfish() {
     return new Promise((resolve) => {
       if (!workerRef.current) return resolve(null)
 
-      const lines = []
+      // Stockfish returns score relative to the side to move.
+      // We need to know who is moving to normalize to "positive = white better".
+      const turn = fen.split(' ')[1] // 'w' or 'b'
+
       let bestMove = null
       let score = null
       let pv = []
@@ -60,9 +63,16 @@ export function useStockfish() {
             const pvMatch = line.match(/ pv (.+)/)
             const currentDepth = depthMatch ? parseInt(depthMatch[1]) : 0
 
-            if (currentDepth >= Math.min(depth, 15) && scoreMatch && pvMatch) {
+            if (currentDepth >= 1 && scoreMatch && pvMatch) {
               const scoreType = scoreMatch[1]
-              const scoreVal = parseInt(scoreMatch[2])
+              let scoreVal = parseInt(scoreMatch[2])
+              
+              // Normalize score: if it's black's turn, negate the score 
+              // so that positive ALWAYS means white is better.
+              if (turn === 'b') {
+                scoreVal = -scoreVal
+              }
+
               score = scoreType === 'cp' ? scoreVal / 100 : (scoreVal > 0 ? 999 : -999)
               pv = pvMatch[1].trim().split(' ').slice(0, 5)
             }
@@ -71,7 +81,7 @@ export function useStockfish() {
           if (line.startsWith('bestmove')) {
             workerRef.current.removeEventListener('message', handler)
             bestMove = line.split(' ')[1]
-            resolve({ bestMove, score, pv, lines })
+            resolve({ bestMove, score, pv })
             resolveRef.current = null
           }
         }

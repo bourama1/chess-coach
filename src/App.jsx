@@ -44,11 +44,10 @@ export default function App() {
       const result = await evaluate(fen, 16)
       if (!result) return
 
-      const data = { bestMove: result.bestMove, score: result.score, pv: result.pv }
+      const data = { lastMovePlayed: san, score: result.score, pv: result.pv }
       setEngineData(data)
       setIsThinkingEngine(false)
 
-      // Highlight best move squares
       if (result.bestMove && result.bestMove.length >= 4) {
         const from = result.bestMove.slice(0, 2)
         const to = result.bestMove.slice(2, 4)
@@ -58,14 +57,13 @@ export default function App() {
         })
       }
 
-      // AI explanation
       if (hasKey) {
         setIsThinkingAI(true)
         const g = gameRef.current
         try {
           const text = await explain({
             fen,
-            bestMove: result.bestMove,
+            lastMove: san,
             score: result.score,
             pv: result.pv,
             moveHistory: history,
@@ -90,7 +88,6 @@ export default function App() {
     const gameCopy = new Chess(game.fen())
     let move = null
 
-    // Handle promotion
     const isPromotion =
       (piece === 'wP' && targetSquare[1] === '8') ||
       (piece === 'bP' && targetSquare[1] === '1')
@@ -170,82 +167,56 @@ export default function App() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '20px',
-    }}>
+    <div className="app-container">
       {/* Header */}
       <header style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '24px',
-        paddingBottom: '16px',
+        marginBottom: '32px',
+        paddingBottom: '20px',
         borderBottom: '1px solid var(--border)',
       }}>
         <div>
           <h1 style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: '26px',
+            fontSize: '32px',
             fontWeight: '600',
             color: 'var(--accent-ivory)',
-            letterSpacing: '0.01em',
+            letterSpacing: '0.02em',
           }}>
             Chess Coach
           </h1>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-            Stockfish {engineReady ? (
-              <span style={{ color: 'var(--success)' }}>● ready</span>
-            ) : (
-              <span style={{ color: 'var(--accent-amber)', animation: 'pulse-amber 1.2s infinite' }}>● loading</span>
-            )}
-            {hasKey && <span style={{ marginLeft: '12px', color: 'var(--success)' }}>● Groq AI active</span>}
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', gap: '16px' }}>
+            <span>Engine: {engineReady ? <b style={{color: 'var(--success)'}}>Ready</b> : <b style={{color: 'var(--accent-amber)'}}>Loading...</b>}</span>
+            <span>AI: {hasKey ? <b style={{color: 'var(--success)'}}>Active</b> : <b style={{color: 'var(--danger)'}}>Offline</b>}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <IconButton onClick={() => setBoardOrientation(o => o === 'white' ? 'black' : 'white')} title="Flip board">
-            ⇅
+        <div className="header-controls" style={{ display: 'flex', gap: '12px' }}>
+          <IconButton onClick={() => setBoardOrientation(o => o === 'white' ? 'black' : 'white')} title="Flip Board">
+            ⇅ Flip
           </IconButton>
-          <IconButton onClick={handleUndo} title="Undo" disabled={moveHistory.length === 0}>
-            ↩
+          <IconButton onClick={handleUndo} title="Undo Move" disabled={moveHistory.length === 0}>
+            ↩ Undo
           </IconButton>
-          <IconButton onClick={handleReset} title="New game">
-            ⟳
+          <IconButton onClick={handleReset} title="New Game">
+            ⟳ Reset
           </IconButton>
           <IconButton onClick={handleExportPGN} title="Export PGN" disabled={moveHistory.length === 0}>
-            ↓PGN
+            ↓ PGN
           </IconButton>
         </div>
       </header>
 
       {/* Main layout */}
-      <div style={{
-        display: 'flex',
-        gap: '20px',
-        flex: 1,
-        alignItems: 'flex-start',
-        flexWrap: 'wrap',
-      }}>
-        {/* Eval bar + Board */}
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'flex-start',
-          flex: '0 0 auto',
-        }}>
+      <main className="main-layout fade-in">
+        {/* Board Section */}
+        <section className="board-section">
           <EvalBar
             score={engineData?.score ?? null}
             isThinking={isThinkingEngine}
           />
-          <div style={{
-            width: 'min(520px, calc(100vw - 120px))',
-            boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-            borderRadius: '6px',
-            overflow: 'hidden',
-            border: '2px solid var(--border-light)',
-          }}>
+          <div className="board-wrapper">
             <Chessboard
               position={game.fen()}
               onPieceDrop={onDrop}
@@ -253,71 +224,74 @@ export default function App() {
               customSquareStyles={highlightSquares}
               customDarkSquareStyle={{ backgroundColor: '#4a3d2e' }}
               customLightSquareStyle={{ backgroundColor: '#c8b89a' }}
-              animationDuration={180}
+              animationDuration={200}
             />
           </div>
-        </div>
+        </section>
 
         {/* Sidebar */}
-        <div style={{
-          flex: '1 1 280px',
-          minWidth: '260px',
-          maxWidth: '340px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-        }}>
-          {/* Turn indicator */}
+        <aside className="sidebar">
+          {/* Turn Indicator */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            padding: '10px 14px',
+            gap: '12px',
+            padding: '16px',
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',
-            borderRadius: '8px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
           }}>
             <div style={{
-              width: '18px',
-              height: '18px',
+              width: '24px',
+              height: '24px',
               borderRadius: '50%',
               background: game.turn() === 'w' ? 'var(--eval-white)' : '#1a1714',
               border: '2px solid var(--border-light)',
-              boxShadow: game.turn() === 'w' ? '0 0 10px rgba(232,224,208,0.3)' : 'none',
+              boxShadow: game.turn() === 'w' ? '0 0 15px rgba(232,224,208,0.4)' : 'none',
               flexShrink: 0,
             }} />
-            <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
-              {gameStatus === 'playing' || gameStatus === 'check'
-                ? `${game.turn() === 'w' ? 'White' : 'Black'} to move`
-                : gameStatus === 'checkmate'
-                ? `${game.turn() === 'w' ? 'Black' : 'White'} wins`
-                : 'Game over'}
-            </span>
-            <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '11px' }}>
-              Move {Math.ceil(moveHistory.length / 2) || 1}
-            </span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Current Turn</div>
+              <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                {gameStatus === 'playing' || gameStatus === 'check'
+                  ? `${game.turn() === 'w' ? 'White' : 'Black'} to move`
+                  : 'Game Over'}
+              </div>
+            </div>
+            {gameStatus === 'check' && (
+              <span style={{ color: 'var(--danger)', fontWeight: 'bold', fontSize: '12px', background: 'rgba(200,64,64,0.1)', padding: '4px 8px', borderRadius: '4px' }}>CHECK</span>
+            )}
           </div>
 
           {/* Move history */}
           <div style={{
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',
-            borderRadius: '8px',
-            padding: '12px',
+            borderRadius: '12px',
+            padding: '16px',
+            flex: '0 0 auto',
+            maxHeight: '300px',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
           }}>
             <div style={{
-              fontSize: '10px',
+              fontSize: '11px',
               color: 'var(--text-muted)',
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              marginBottom: '10px',
+              marginBottom: '12px',
+              fontWeight: '600',
             }}>
               Move History
             </div>
-            <MoveHistory
-              history={moveHistory}
-              currentIndex={currentMoveIndex}
-            />
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              <MoveHistory
+                history={moveHistory}
+                currentIndex={currentMoveIndex}
+              />
+            </div>
           </div>
 
           {/* Coach panel */}
@@ -329,21 +303,22 @@ export default function App() {
             error={aiError}
             gameStatus={gameStatus !== 'playing' ? gameStatus : null}
           />
-        </div>
-      </div>
+        </aside>
+      </main>
 
       {/* Footer */}
       <footer style={{
-        marginTop: '24px',
-        paddingTop: '16px',
-        borderTop: '1px solid var(--border)',
-        fontSize: '11px',
+        marginTop: 'auto',
+        paddingTop: '32px',
+        paddingBottom: '16px',
+        fontSize: '12px',
         color: 'var(--text-muted)',
         display: 'flex',
         justifyContent: 'space-between',
+        borderTop: '1px solid var(--border)',
       }}>
-        <span>chess.js · react-chessboard · Stockfish.js · Groq AI</span>
-        <span>drag pieces to move</span>
+        <span>Stockfish 16.1 · Llama 3.3 · Groq AI</span>
+        <span>Made with ❤️ for Chess Lovers</span>
       </footer>
     </div>
   )
@@ -358,16 +333,20 @@ function IconButton({ children, onClick, title, disabled }) {
       style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
-        borderRadius: '6px',
+        borderRadius: '8px',
         color: disabled ? 'var(--text-muted)' : 'var(--text-secondary)',
-        padding: '7px 12px',
+        padding: '10px 16px',
         fontSize: '13px',
-        transition: 'all 0.15s',
+        fontWeight: '500',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.5 : 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
       }}
-      onMouseEnter={e => { if (!disabled) { e.target.style.borderColor = 'var(--border-light)'; e.target.style.color = 'var(--text-primary)' }}}
-      onMouseLeave={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.color = disabled ? 'var(--text-muted)' : 'var(--text-secondary)' }}
+      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.borderColor = 'var(--accent-amber-dim)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.transform = 'translateY(-1px)' }}}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = disabled ? 'var(--text-muted)' : 'var(--text-secondary)'; e.currentTarget.style.transform = 'translateY(0)' }}
     >
       {children}
     </button>

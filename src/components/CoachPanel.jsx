@@ -1,7 +1,7 @@
 import React from 'react'
 
-function EngineInfo({ bestMove, score, pv }) {
-  if (!bestMove) return null
+function EngineInfo({ lastMovePlayed, score, pv }) {
+  if (!lastMovePlayed) return null
 
   const scoreColor = score > 0.5 ? '#8db88d' : score < -0.5 ? '#b88d8d' : 'var(--text-secondary)'
   const scoreText = score >= 999 ? 'Mate' : score <= -999 ? 'Mate' :
@@ -18,17 +18,17 @@ function EngineInfo({ bestMove, score, pv }) {
       gap: '8px',
     }}>
       <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-        Engine Analysis
+        Move Evaluation
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Best: </span>
+          <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Played: </span>
           <span style={{
             color: 'var(--accent-amber-bright)',
             fontWeight: '500',
             fontSize: '14px',
           }}>
-            {bestMove}
+            {lastMovePlayed}
           </span>
         </div>
         <span style={{ color: scoreColor, fontSize: '13px', fontWeight: '500' }}>
@@ -37,7 +37,7 @@ function EngineInfo({ bestMove, score, pv }) {
       </div>
       {pv && pv.length > 0 && (
         <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-          <span style={{ color: 'var(--text-muted)' }}>Line: </span>
+          <span style={{ color: 'var(--text-muted)' }}>Continuation: </span>
           <span style={{ color: 'var(--text-secondary)' }}>{pv.slice(0, 5).join(' ')}</span>
         </div>
       )}
@@ -59,7 +59,7 @@ function SkeletonLine({ width = '100%' }) {
 }
 
 export default function CoachPanel({ engineData, explanation, isThinkingEngine, isThinkingAI, error, gameStatus }) {
-  const isActive = engineData?.bestMove
+  const isActive = engineData?.lastMovePlayed
 
   return (
     <div style={{
@@ -99,7 +99,7 @@ export default function CoachPanel({ engineData, explanation, isThinkingEngine, 
           gap: '8px',
         }}>
           <div style={{ fontSize: '10px', color: 'var(--accent-amber)', letterSpacing: '0.1em', textTransform: 'uppercase', animation: 'pulse-amber 1.2s infinite' }}>
-            Engine thinking...
+            Evaluating move...
           </div>
           <SkeletonLine width="60%" />
           <SkeletonLine width="80%" />
@@ -116,7 +116,7 @@ export default function CoachPanel({ engineData, explanation, isThinkingEngine, 
           color: 'var(--text-muted)',
           fontSize: '12px',
         }}>
-          Make a move to see analysis
+          Make a move to see evaluation
         </div>
       )}
 
@@ -154,7 +154,7 @@ export default function CoachPanel({ engineData, explanation, isThinkingEngine, 
         ) : isThinkingAI ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ fontSize: '11px', color: 'var(--accent-amber)', animation: 'pulse-amber 1.2s infinite' }}>
-              Analyzing position...
+              Analyzing move...
             </div>
             <SkeletonLine />
             <SkeletonLine width="90%" />

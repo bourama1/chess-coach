@@ -8,34 +8,41 @@ const GROQ_CONFIG = {
 export function useGroq() {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY
 
-  const explain = useCallback(async ({ fen, bestMove, score, pv, moveHistory, turn }) => {
+  const explain = useCallback(async ({ fen, lastMove, score, pv, moveHistory, turn }) => {
     if (!apiKey) {
       console.warn('Groq API Key (VITE_GROQ_API_KEY) is missing in environment.')
       return null
     }
 
-    const pvString = pv && pv.length > 0 ? pv.join(' ') : bestMove
-    const scoreText = score === null ? 'equal' :
-      score > 0 ? `+${score.toFixed(2)} (White is better)` :
-      score < 0 ? `${score.toFixed(2)} (Black is better)` : 'equal'
+    const pvString = pv && pv.length > 0 ? pv.join(' ') : 'none'
+    const scoreText = score === null ? '0.00 (Equal)' :
+      score > 0 ? `+${score.toFixed(2)} (White is winning)` :
+      score < 0 ? `${score.toFixed(2)} (Black is winning)` : '0.00 (Equal)'
 
-    const lastMoves = moveHistory.slice(-6).join(', ')
+    const lastMoves = moveHistory.slice(-8).join(', ')
 
-    const prompt = `You are a friendly chess coach analyzing a position.
+    // A more sophisticated prompt that asks for tactical and positional reasoning
+    const prompt = `You are a Grandmaster Chess Coach. Analyze the student's last move with high precision.
 
+[Current Game State]
 FEN: ${fen}
-It is ${turn === 'w' ? 'White' : 'Black'}'s turn.
-Recent moves: ${lastMoves || 'Game just started'}
-Engine evaluation: ${scoreText}
-Best move: ${bestMove}
-Best line (principal variation): ${pvString}
+Last Move: ${lastMove}
+Recent History: ${lastMoves}
+Current Evaluation: ${scoreText}
+Best Engine Continuation: ${pvString}
+Whose turn it is now: ${turn === 'w' ? 'White' : 'Black'}
 
-Give a concise, human-friendly explanation in 2-3 sentences covering:
-1. Why the engine best move is strong
-2. One key threat or strategic theme
-3. What the opponent should watch out for
+[Your Task]
+Provide a sophisticated, concise (max 3-4 sentences) coaching insight.
+1. EVALUATE: Classify the move ${lastMove} (e.g., Brilliant, Great, Solid, Inaccuracy, or Blunder) based on the evaluation and the position.
+2. TACTICS/STRATEGY: Identify exactly what ${lastMove} accomplishes. Does it create a fork, pin, or skewer? Does it improve piece activity, control the center, or weaken the king's safety?
+3. THE "WHY": Explain the logic behind the engine's suggested line (${pvString}) in relation to the move just played.
+4. ADVICE: Give a specific, high-level tip for the side now to move.
 
-Keep it simple and encouraging. Write naturally as a coach speaking to a student.`
+[Style Guide]
+- Use professional chess terminology (e.g., "zwischenzug", "outpost", "prophylaxis", "pawn structure").
+- Be authoritative yet encouraging.
+- Avoid generic advice; be specific to this exact FEN.`
 
     try {
       const response = await fetch(GROQ_CONFIG.url, {
@@ -46,10 +53,13 @@ Keep it simple and encouraging. Write naturally as a coach speaking to a student
         },
         body: JSON.stringify({
           model: GROQ_CONFIG.model,
-          max_tokens: 180,
-          temperature: 0.7,
+          max_tokens: 250,
+          temperature: 0.3,
           messages: [
-            { role: 'system', content: 'You are a concise, encouraging chess coach. Speak directly and clearly.' },
+            { 
+              role: 'system', 
+              content: 'You are an expert Grandmaster Chess Coach. You provide deep, precise, and concise tactical and positional analysis of chess moves.' 
+            },
             { role: 'user', content: prompt }
           ]
         })
